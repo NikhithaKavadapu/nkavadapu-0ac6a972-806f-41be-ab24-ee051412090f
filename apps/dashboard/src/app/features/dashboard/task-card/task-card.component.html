@@ -1,0 +1,44 @@
+<div class="bg-slate-800/60 rounded-xl border border-slate-700/50 p-4 hover:border-slate-600 transition-all animate-fade-in" role="listitem">
+  <div class="flex items-start justify-between gap-2">
+    <div class="min-w-0 flex-1">
+      <h3 class="font-medium text-white truncate">{{ task().title }}</h3>
+      @if (task().description) {
+        <p class="mt-1 text-sm text-slate-400 line-clamp-2">{{ task().description }}</p>
+      }
+      <div class="mt-2 flex flex-wrap gap-2 items-center">
+        <span [class]="'text-xs px-2 py-0.5 rounded-full ' + statusColor(task().status)">
+          {{ statusLabel(task().status) }}
+        </span>
+        <span class="text-xs text-slate-500">{{ categoryLabel(task().category) }}</span>
+        @if (task().assignedToUser) {
+          <span class="text-xs text-slate-400">→ {{ task().assignedToUser.name || task().assignedToUser.email }}</span>
+        }
+      </div>
+    </div>
+    @if (canEdit()) {
+      <div class="flex gap-1 shrink-0">
+        <button (click)="emitEdit(task())" class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition" aria-label="Edit task">✎</button>
+        <button (click)="emitDelete(task())" class="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-700 transition" aria-label="Delete task">🗑</button>
+      </div>
+    }
+  </div>
+  @if (canEdit()) {
+    <div class="mt-3 pt-3 border-t border-slate-700 flex gap-2">
+      <button
+        (click)="onStatusChange(task(), 'pending')"
+        [class]="task().status === 'pending' ? 'ring-2 ring-amber-400' : ''"
+        class="text-xs px-2 py-1 rounded bg-slate-700 text-slate-300 hover:bg-slate-600 transition"
+      >Pending</button>
+      <button
+        (click)="onStatusChange(task(), 'in_progress')"
+        [class]="task().status === 'in_progress' ? 'ring-2 ring-blue-400' : ''"
+        class="text-xs px-2 py-1 rounded bg-slate-700 text-slate-300 hover:bg-slate-600 transition"
+      >In Progress</button>
+      <button
+        (click)="onStatusChange(task(), 'completed')"
+        [class]="task().status === 'completed' ? 'ring-2 ring-emerald-400' : ''"
+        class="text-xs px-2 py-1 rounded bg-slate-700 text-slate-300 hover:bg-slate-600 transition"
+      >Done</button>
+    </div>
+  }
+</div>

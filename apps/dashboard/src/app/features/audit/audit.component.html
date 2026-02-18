@@ -1,0 +1,60 @@
+<div class="min-h-screen bg-slate-900">
+  <header class="sticky top-0 z-40 border-b border-slate-700/50 bg-slate-900/95 backdrop-blur">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-6">
+        <h1 class="text-xl font-bold text-white">Audit Log</h1>
+        <nav>
+          <a routerLink="/dashboard" class="px-3 py-2 rounded-lg text-slate-300 hover:text-white transition">← Tasks</a>
+        </nav>
+      </div>
+      <div class="flex items-center gap-4">
+        <span class="text-sm text-slate-400">{{ auth.currentUser()?.email }}</span>
+        <button (click)="auth.logout()" class="text-sm text-slate-400 hover:text-white transition">Log out</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="max-w-6xl mx-auto px-4 py-8">
+    @if (loading()) {
+      <div class="space-y-3">
+        @for (i of [1,2,3,4,5]; track i) {
+          <div class="h-16 rounded-xl bg-slate-800/40 animate-pulse"></div>
+        }
+      </div>
+    } @else if (entries().length === 0) {
+      <div class="text-center py-16 rounded-2xl border border-dashed border-slate-600 bg-slate-800/30">
+        <p class="text-slate-400">No audit entries yet.</p>
+      </div>
+    } @else {
+      <div class="overflow-x-auto rounded-xl border border-slate-700/50 bg-slate-800/40">
+        <table class="w-full text-left" role="table">
+          <thead>
+            <tr class="border-b border-slate-700">
+              <th class="px-4 py-3 text-sm font-medium text-slate-400">Time</th>
+              <th class="px-4 py-3 text-sm font-medium text-slate-400">Action</th>
+              <th class="px-4 py-3 text-sm font-medium text-slate-400">Entity</th>
+              <th class="px-4 py-3 text-sm font-medium text-slate-400">ID</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (e of entries(); track e.id) {
+              <tr class="border-b border-slate-700/50 hover:bg-slate-800/50 transition">
+                <td class="px-4 py-3 text-sm text-slate-300">{{ formatDate(e.createdAt) }}</td>
+                <td class="px-4 py-3 text-sm text-indigo-400">{{ e.action }}</td>
+                <td class="px-4 py-3 text-sm text-slate-300">{{ e.entityType }}</td>
+                <td class="px-4 py-3 text-sm font-mono text-slate-500 truncate max-w-[12rem]">{{ e.entityId ?? '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="mt-4 flex items-center justify-between text-sm text-slate-400">
+        <span>Page {{ page() }} · {{ total() }} total</span>
+        <div class="flex gap-2">
+          <button (click)="prevPage()" [disabled]="page() <= 1" class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-50">Previous</button>
+          <button (click)="nextPage()" [disabled]="page() * limit >= total()" class="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-50">Next</button>
+        </div>
+      </div>
+    }
+  </div>
+</div>

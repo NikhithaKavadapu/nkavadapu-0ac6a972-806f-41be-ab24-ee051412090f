@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/apps/api",
+    "rootDir": "../.."
+  },
+  "include": [
+    "src/**/*",
+    "../../libs/data/src/**/*",
+    "../../libs/auth/src/**/*"
+  ],
+  "exclude": ["**/*.spec.ts", "jest.config.ts", "../../libs/**/*.spec.ts"]
+}

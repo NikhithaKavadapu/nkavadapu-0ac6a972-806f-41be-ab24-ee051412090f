@@ -1,0 +1,155 @@
+<div class="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 text-white p-6">
+  <nav class="flex flex-wrap gap-4 mb-8 items-center">
+    <a routerLink="/super-admin" routerLinkActive="text-white font-medium" class="text-indigo-300 hover:text-white transition">Dashboard</a>
+    <a routerLink="/audit" class="text-indigo-300 hover:text-white transition">Audit Log</a>
+    <span class="text-white/50">|</span>
+    <span class="text-white/80">{{ auth.currentUser()?.email }}</span>
+    <button (click)="auth.logout()" class="text-white/60 hover:text-white transition">Logout</button>
+  </nav>
+
+  <div class="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl overflow-hidden">
+    <div class="p-6 border-b border-white/10 flex flex-wrap items-center justify-between gap-4">
+      <h1 class="text-2xl font-bold">Super Admin Dashboard</h1>
+      <button
+        (click)="openCreateOrg()"
+        class="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-medium transition"
+      >
+        Create organization
+      </button>
+    </div>
+
+    <div class="p-6">
+      <h2 class="text-lg font-semibold mb-4">Organizations</h2>
+      @if (loadingOrgs()) {
+        <div class="animate-pulse space-y-3">
+          <div class="h-12 bg-white/10 rounded-xl"></div>
+          <div class="h-12 bg-white/10 rounded-xl"></div>
+          <div class="h-12 bg-white/10 rounded-xl"></div>
+        </div>
+      } @else if (orgLoadError()) {
+        <div class="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
+          <p class="text-amber-200 font-medium">Could not load organizations.</p>
+          <p class="text-white/70 text-sm mt-1">Ensure the API is running: <code class="bg-black/30 px-1 rounded">npm run start:api</code> (port 3333).</p>
+          <p class="text-white/60 text-sm mt-2">Default organizations (once API is up): {{ defaultOrgNames }}</p>
+          <button (click)="loadOrganizations()" class="mt-3 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-sm">Retry</button>
+        </div>
+      } @else if (organizations().length === 0) {
+        <p class="text-white/60">No organizations yet. Create one above.</p>
+      } @else {
+        <div class="overflow-x-auto">
+          <table class="w-full text-left">
+            <thead>
+              <tr class="border-b border-white/20">
+                <th class="py-3 px-4 font-medium">Name</th>
+                <th class="py-3 px-4 font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (org of organizations(); track org.id) {
+                <tr class="border-b border-white/10 hover:bg-white/5">
+                  <td class="py-3 px-4">{{ org.name }}</td>
+                  <td class="py-3 px-4">
+                    <button
+                      (click)="openCreateOwner(org.id)"
+                      class="text-indigo-300 hover:text-white transition text-sm"
+                    >
+                      Generate owner
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+
+    <div class="p-6 border-t border-white/10">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold">Platform users</h2>
+        <button
+          (click)="loadPlatformUsers()"
+          class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-sm transition"
+        >
+          Refresh
+        </button>
+      </div>
+      @if (loadingUsers()) {
+        <p class="text-white/60">Loading...</p>
+      } @else if (platformUsers().length === 0) {
+        <p class="text-white/60">Click Refresh to load users.</p>
+      } @else {
+        <div class="overflow-x-auto rounded-xl border border-white/10">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-white/5">
+              <tr>
+                <th class="py-2 px-4 font-medium">Name</th>
+                <th class="py-2 px-4 font-medium">Email</th>
+                <th class="py-2 px-4 font-medium">Role</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (u of platformUsers(); track u.id) {
+                <tr class="border-t border-white/10">
+                  <td class="py-2 px-4">{{ u.name }}</td>
+                  <td class="py-2 px-4">{{ u.email }}</td>
+                  <td class="py-2 px-4">{{ roleLabel(u.role) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </div>
+
+  @if (showCreateOrgModal()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" (click)="closeModals()">
+      <div class="rounded-2xl border border-white/10 bg-slate-900 shadow-2xl p-6 w-full max-w-md" (click)="$event.stopPropagation()">
+        <h3 class="text-lg font-semibold mb-4">Create organization</h3>
+        <form [formGroup]="createOrgForm" (ngSubmit)="onCreateOrg()">
+          <label class="block text-sm text-white/80 mb-2">Name</label>
+          <input
+            formControlName="name"
+            class="w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white mb-4"
+            placeholder="Company name"
+          />
+          <div class="flex gap-2 justify-end">
+            <button type="button" (click)="closeModals()" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20">Cancel</button>
+            <button type="submit" [disabled]="createOrgForm.invalid" class="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 disabled:opacity-50">Create</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  @if (showCreateOwnerModal() && selectedOrgId()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" (click)="closeModals()">
+      <div class="rounded-2xl border border-white/10 bg-slate-900 shadow-2xl p-6 w-full max-w-md" (click)="$event.stopPropagation()">
+        <h3 class="text-lg font-semibold mb-4">Generate owner credentials</h3>
+        <form [formGroup]="createOwnerForm" (ngSubmit)="onCreateOwner()">
+          <label class="block text-sm text-white/80 mb-2">Email</label>
+          <input
+            formControlName="email"
+            type="email"
+            class="w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white mb-4"
+            placeholder="ownername&#64;company.com"
+          />
+          <label class="block text-sm text-white/80 mb-2">Name (optional)</label>
+          <input
+            formControlName="name"
+            class="w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white mb-4"
+            placeholder="Owner name"
+          />
+          <p class="text-sm text-white/60 mb-4">A random secure password will be generated.</p>
+          <div class="flex gap-2 justify-end">
+            <button type="button" (click)="closeModals()" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20">Cancel</button>
+            <button type="submit" [disabled]="createOwnerForm.invalid || createOwnerLoading()" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50">
+              {{ createOwnerLoading() ? 'Creating...' : 'Generate' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

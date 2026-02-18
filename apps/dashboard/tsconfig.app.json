@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/apps/dashboard"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["**/*.spec.ts", "jest.config.ts"]
+}

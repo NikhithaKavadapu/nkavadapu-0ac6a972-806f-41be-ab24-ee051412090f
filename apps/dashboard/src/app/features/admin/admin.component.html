@@ -1,0 +1,54 @@
+<div class="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 text-white p-6">
+  <nav class="flex flex-wrap gap-4 mb-8 items-center">
+    <a routerLink="/dashboard" class="text-indigo-300 hover:text-white transition">Dashboard</a>
+    <a routerLink="/audit" class="text-indigo-300 hover:text-white transition">Audit</a>
+    <span class="text-white/50">|</span>
+    <span class="text-white/80">{{ auth.currentUser()?.email }}</span>
+    <button (click)="auth.logout()" class="text-white/60 hover:text-white transition">Logout</button>
+  </nav>
+
+  <div class="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl overflow-hidden">
+    <div class="p-6 border-b border-white/10">
+      <h1 class="text-2xl font-bold">Admin dashboard</h1>
+      <p class="mt-1 text-white/60">Manage tasks and view users in your organization.</p>
+    </div>
+    <div class="p-6">
+      <h2 class="text-lg font-semibold mb-4">Users in your organization</h2>
+      @if (loading()) {
+        <div class="animate-pulse space-y-2">
+          <div class="h-10 bg-white/10 rounded-lg"></div>
+          <div class="h-10 bg-white/10 rounded-lg"></div>
+          <div class="h-10 bg-white/10 rounded-lg"></div>
+        </div>
+      } @else if (orgUsers().length === 0) {
+        <p class="text-white/60">No users yet.</p>
+      } @else {
+        <div class="rounded-xl border border-white/10 overflow-hidden">
+          <table class="w-full text-sm">
+            <thead class="bg-white/5">
+              <tr>
+                <th class="py-2 px-4 text-left font-medium">Name</th>
+                <th class="py-2 px-4 text-left font-medium">Email</th>
+                <th class="py-2 px-4 text-left font-medium">Role</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (u of orgUsers(); track u.id) {
+                <tr class="border-t border-white/10">
+                  <td class="py-2 px-4">{{ u.name }}</td>
+                  <td class="py-2 px-4">{{ u.email }}</td>
+                  <td class="py-2 px-4">{{ roleLabel(u.role) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+    <div class="p-6 border-t border-white/10">
+      <a routerLink="/dashboard" class="inline-flex items-center gap-2 text-indigo-300 hover:text-white transition">
+        Go to task management →
+      </a>
+    </div>
+  </div>
+</div>

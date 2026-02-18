@@ -1,0 +1,55 @@
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" (click)="cancel.emit()" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="bg-slate-800 rounded-2xl shadow-soft border border-slate-700 w-full max-w-md animate-in" (click)="$event.stopPropagation()" role="document">
+    <div class="p-6">
+      <h2 id="modal-title" class="text-lg font-semibold text-white">{{ isEdit() ? 'Edit Task' : 'New Task' }}</h2>
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="mt-4 space-y-4">
+        <div>
+          <label for="title" class="block text-sm font-medium text-slate-300 mb-1">Title</label>
+          <input id="title" formControlName="title" class="w-full px-4 py-2 rounded-xl bg-slate-700 border border-slate-600 text-white focus:ring-2 focus:ring-indigo-500" placeholder="Task title" />
+          @if (form.get('title')?.invalid && form.get('title')?.touched) {
+            <p class="mt-1 text-sm text-rose-400">Title is required (max 200 chars)</p>
+          }
+        </div>
+        <div>
+          <label for="description" class="block text-sm font-medium text-slate-300 mb-1">Description</label>
+          <textarea id="description" formControlName="description" rows="3" class="w-full px-4 py-2 rounded-xl bg-slate-700 border border-slate-600 text-white focus:ring-2 focus:ring-indigo-500" placeholder="Optional description"></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label for="status" class="block text-sm font-medium text-slate-300 mb-1">Status</label>
+            <select id="status" formControlName="status" class="w-full px-4 py-2 rounded-xl bg-slate-700 border border-slate-600 text-white focus:ring-2 focus:ring-indigo-500">
+              <option value="pending">Pending</option>
+              <option value="in_progress">In Progress</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+          <div>
+            <label for="category" class="block text-sm font-medium text-slate-300 mb-1">Category</label>
+            <select id="category" formControlName="category" class="w-full px-4 py-2 rounded-xl bg-slate-700 border border-slate-600 text-white focus:ring-2 focus:ring-indigo-500">
+              <option value="work">Work</option>
+              <option value="personal">Personal</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label for="assignedToId" class="block text-sm font-medium text-slate-300 mb-1">Assign to</label>
+          <select id="assignedToId" formControlName="assignedToId" class="w-full px-4 py-2 rounded-xl bg-slate-700 border border-slate-600 text-white focus:ring-2 focus:ring-indigo-500">
+            <option value="">Unassigned</option>
+            @for (u of orgUsers(); track u.id) {
+              <option [value]="u.id">{{ u.name || u.email }}</option>
+            }
+          </select>
+          @if (loadingUsers()) {
+            <p class="mt-1 text-xs text-slate-500">Loading users...</p>
+          }
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" (click)="cancel.emit()" class="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-white transition">Cancel</button>
+          <button type="submit" [disabled]="form.invalid || loading()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white transition">
+            {{ loading() ? 'Saving...' : (isEdit() ? 'Save' : 'Create') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

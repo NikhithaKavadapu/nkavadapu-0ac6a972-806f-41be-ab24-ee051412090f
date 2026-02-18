@@ -1,0 +1,197 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950/30 to-slate-900">
+  <header class="sticky top-0 z-40 border-b border-white/10 bg-slate-900/80 backdrop-blur-xl">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-6">
+        <h1 class="text-xl font-bold text-white">Task Dashboard</h1>
+        <nav class="flex gap-2">
+          @if (!auth.isSuperAdmin()) {
+            <a routerLink="/dashboard" routerLinkActive="bg-white/10" class="px-3 py-2 rounded-xl text-white/80 hover:text-white transition">Tasks</a>
+          }
+          @if (auth.canViewAudit()) {
+            <a routerLink="/audit" routerLinkActive="bg-white/10" class="px-3 py-2 rounded-xl text-white/80 hover:text-white transition">Audit Log</a>
+          }
+          @if (auth.isSuperAdmin()) {
+            <a routerLink="/super-admin" class="px-3 py-2 rounded-xl text-amber-300 hover:text-amber-200 transition">Super Admin</a>
+          }
+          @if (auth.isOwner()) {
+            <a routerLink="/owner" class="px-3 py-2 rounded-xl text-indigo-300 hover:text-indigo-200 transition">Owner</a>
+          }
+          @if (auth.isAdmin()) {
+            <a routerLink="/admin" class="px-3 py-2 rounded-xl text-blue-300 hover:text-blue-200 transition">Admin</a>
+          }
+        </nav>
+      </div>
+      <div class="flex items-center gap-4">
+        <span class="text-sm text-slate-400" aria-label="Logged in as">{{ auth.currentUser()?.email }}</span>
+        <span class="text-xs px-2 py-1 rounded bg-slate-700 text-slate-300" [attr.title]="'Role: ' + (auth.currentUser()?.role ?? '')">{{ roleLabel(auth.currentUser()?.role) }}</span>
+        <button (click)="auth.logout()" class="text-sm text-slate-400 hover:text-white transition">Log out</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="max-w-6xl mx-auto px-4 py-8">
+    <!-- Stats -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+      <div class="bg-white/5 rounded-2xl p-4 border border-white/10 backdrop-blur-sm">
+        <p class="text-white/60 text-sm">Total</p>
+        <p class="text-2xl font-bold text-white">{{ stats().total }}</p>
+      </div>
+      <div class="bg-white/5 rounded-2xl p-4 border border-white/10 backdrop-blur-sm">
+        <p class="text-white/60 text-sm">Pending</p>
+        <p class="text-2xl font-bold text-amber-400">{{ stats().pending }}</p>
+      </div>
+      <div class="bg-white/5 rounded-2xl p-4 border border-white/10 backdrop-blur-sm">
+        <p class="text-white/60 text-sm">In Progress</p>
+        <p class="text-2xl font-bold text-blue-400">{{ stats().inProgress }}</p>
+      </div>
+      <div class="bg-white/5 rounded-2xl p-4 border border-white/10 backdrop-blur-sm">
+        <p class="text-white/60 text-sm">Completed</p>
+        <p class="text-2xl font-bold text-emerald-400">{{ stats().completed }}</p>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="flex flex-wrap items-center gap-4 mb-6">
+      <input
+        type="search"
+        placeholder="Search tasks..."
+        [value]="searchQuery()"
+        (input)="searchQuery.set($any($event.target).value)"
+        class="px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:ring-2 focus:ring-indigo-400 w-64"
+        aria-label="Search tasks"
+      />
+      <select
+        [value]="filterStatus()"
+        (change)="filterStatus.set($any($event.target).value)"
+        class="px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:ring-2 focus:ring-indigo-400"
+        aria-label="Filter by status"
+      >
+        <option value="all">All statuses</option>
+        <option value="pending">Pending</option>
+        <option value="in_progress">In Progress</option>
+        <option value="completed">Completed</option>
+      </select>
+      <select
+        [value]="filterCategory()"
+        (change)="filterCategory.set($any($event.target).value)"
+        class="px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:ring-2 focus:ring-indigo-400"
+        aria-label="Filter by category"
+      >
+        <option value="all">All categories</option>
+        <option value="work">Work</option>
+        <option value="personal">Personal</option>
+      </select>
+      <div class="ml-auto flex items-center gap-2">
+        <span class="text-sm text-white/60">View:</span>
+        <button
+          (click)="viewMode.set('table')"
+          [class]="viewMode() === 'table' ? 'bg-indigo-500 text-white' : 'bg-white/10 text-white/70 hover:bg-white/20'"
+          class="px-3 py-1.5 rounded-lg text-sm transition"
+        >Table</button>
+        <button
+          (click)="viewMode.set('kanban')"
+          [class]="viewMode() === 'kanban' ? 'bg-indigo-500 text-white' : 'bg-white/10 text-white/70 hover:bg-white/20'"
+          class="px-3 py-1.5 rounded-lg text-sm transition"
+        >Kanban</button>
+      </div>
+      @if (auth.canEdit()) {
+        <button
+          (click)="openCreate()"
+          class="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-medium transition shadow-lg"
+        >
+          + New Task
+        </button>
+      }
+    </div>
+
+    <!-- User read-only hint -->
+    @if (!auth.canEdit()) {
+      <p class="mb-4 text-sm text-white/60">You see only tasks assigned to you. Status is managed by Admin/Owner.</p>
+    }
+
+    <!-- Task list / Kanban -->
+    @if (loading()) {
+      <div class="space-y-3">
+        @for (i of [1,2,3,4,5]; track i) {
+          <div class="h-24 rounded-xl bg-slate-800/40 animate-pulse"></div>
+        }
+      </div>
+    } @else if (filteredTasks().length === 0) {
+      <div class="text-center py-16 rounded-2xl border border-dashed border-white/20 bg-white/5">
+        @if (auth.canEdit()) {
+          <p class="text-white/70 text-lg">No tasks yet</p>
+          <p class="text-white/50 mt-1">Create a task and assign it to a user.</p>
+          <button (click)="openCreate()" class="mt-4 px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white">Create task</button>
+        } @else {
+          <p class="text-white/70 text-lg">No tasks assigned to you</p>
+          <p class="text-white/50 mt-1">An Admin or Owner will assign tasks to you.</p>
+        }
+      </div>
+    } @else if (viewMode() === 'kanban') {
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="rounded-2xl border border-amber-500/30 bg-white/5 p-4 min-h-[200px]" (drop)="onStatusDrop($event, 'pending')" (dragover)="allowDrop($event)">
+          <h3 class="text-sm font-semibold text-amber-400 mb-3">Pending</h3>
+          @for (task of tasksByStatus().pending; track task.id) {
+            <div class="mb-2" draggable="true" (dragstart)="$event.dataTransfer?.setData('text/plain', task.id)">
+              <app-task-card [task]="task" [canEdit]="auth.canEdit()" (edit)="openEdit(task)" (delete)="openDelete(task)" (statusChange)="loadTasks()" />
+            </div>
+          }
+        </div>
+        <div class="rounded-2xl border border-blue-500/30 bg-white/5 p-4 min-h-[200px]" (drop)="onStatusDrop($event, 'in_progress')" (dragover)="allowDrop($event)">
+          <h3 class="text-sm font-semibold text-blue-400 mb-3">In Progress</h3>
+          @for (task of tasksByStatus().in_progress; track task.id) {
+            <div class="mb-2" draggable="true" (dragstart)="$event.dataTransfer?.setData('text/plain', task.id)">
+              <app-task-card [task]="task" [canEdit]="auth.canEdit()" (edit)="openEdit(task)" (delete)="openDelete(task)" (statusChange)="loadTasks()" />
+            </div>
+          }
+        </div>
+        <div class="rounded-2xl border border-emerald-500/30 bg-white/5 p-4 min-h-[200px]" (drop)="onStatusDrop($event, 'completed')" (dragover)="allowDrop($event)">
+          <h3 class="text-sm font-semibold text-emerald-400 mb-3">Completed</h3>
+          @for (task of tasksByStatus().completed; track task.id) {
+            <div class="mb-2" draggable="true" (dragstart)="$event.dataTransfer?.setData('text/plain', task.id)">
+              <app-task-card [task]="task" [canEdit]="auth.canEdit()" (edit)="openEdit(task)" (delete)="openDelete(task)" (statusChange)="loadTasks()" />
+            </div>
+          }
+        </div>
+      </div>
+    } @else {
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" role="list">
+        @for (task of filteredTasks(); track task.id) {
+          <app-task-card
+            [task]="task"
+            [canEdit]="auth.canEdit()"
+            (edit)="openEdit(task)"
+            (delete)="openDelete(task)"
+            (statusChange)="loadTasks()"
+          />
+        }
+      </div>
+    }
+  </div>
+
+  @if (showCreateModal()) {
+    <app-task-modal
+      mode="create"
+      (saved)="onTaskCreated()"
+      (cancel)="closeModals()"
+    />
+  }
+  @if (editTask(); as task) {
+    <app-task-modal
+      [task]="task"
+      mode="edit"
+      (saved)="onTaskUpdated()"
+      (cancel)="closeModals()"
+    />
+  }
+  @if (deleteTask(); as task) {
+    <app-confirm-modal
+      title="Delete task?"
+      [message]="deleteConfirmMessage(task)"
+      confirmLabel="Delete"
+      confirmClass="bg-rose-600 hover:bg-rose-500"
+      (confirm)="onTaskDeleted()"
+      (cancel)="closeModals()"
+    />
+  }
+</div>
